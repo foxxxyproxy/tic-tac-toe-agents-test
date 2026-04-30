@@ -187,7 +187,8 @@ After addressing all BLOCKERs, push the fixes and re-transition the issue to `re
 - All new components have a colocated `.module.css` with BEM class names using design tokens
 - New significant files have a `// SPEC.md: Phase N — ...` top-of-file comment
 - PR description includes plan (if multi-step), gate evidence, and "how to verify locally" with exact commands
-- Issue is in `review` status
+- Issue is in `review` status AND reassigned to @reviewer
+- Handoff comment with PR link is posted on the issue
 - You have stopped and are waiting
 
 ---
