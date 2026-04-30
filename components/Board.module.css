@@ -1,0 +1,8 @@
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-1);
+  max-inline-size: 320px;
+  background: var(--color-border);
+  padding: var(--space-1);
+}
