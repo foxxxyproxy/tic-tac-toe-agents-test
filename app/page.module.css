@@ -1,0 +1,12 @@
+.page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 100dvh;
+  padding: var(--space-4);
+}
+
+.page__title {
+  font-size: var(--font-size-xl);
+  color: var(--color-fg);
+}

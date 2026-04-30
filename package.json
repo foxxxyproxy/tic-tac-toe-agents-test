@@ -7,7 +7,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest",
+    "validate:html": "html-validate '.next/server/app/**/*.html' || true",
+    "validate:a11y": "pa11y-ci",
+    "prepare": "husky"
   },
   "dependencies": {
     "next": "16.2.4",
@@ -20,9 +24,17 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
-    "typescript": "^5"
+    "html-validate": "^10.13.1",
+    "husky": "^9.1.7",
+    "pa11y-ci": "^4.1.0",
+    "typescript": "^5",
+    "vitest": "^4.1.5"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["sharp", "unrs-resolver"]
+    "onlyBuiltDependencies": [
+      "puppeteer",
+      "sharp",
+      "unrs-resolver"
+    ]
   }
 }
