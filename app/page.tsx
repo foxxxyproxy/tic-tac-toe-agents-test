@@ -1,7 +1,9 @@
+import styles from "./page.module.css";
+
 export default function Home() {
   return (
-    <main>
-      <h1>Tic-Tac-Toe</h1>
+    <main className={styles.page}>
+      <h1 className={styles.page__title}>Tic-tac-toe</h1>
     </main>
   );
 }

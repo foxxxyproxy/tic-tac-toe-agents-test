@@ -1,0 +1,11 @@
+{
+  "defaults": {
+    "standard": "WCAG2AA",
+    "timeout": 15000,
+    "wait": 500
+  },
+  "urls": [
+    "http://localhost:3000/",
+    "http://localhost:3000/dev"
+  ]
+}
