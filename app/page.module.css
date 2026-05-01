@@ -35,3 +35,9 @@
     outline-offset: var(--focus-ring-offset);
   }
 }
+
+.page__room-code {
+  font-size: var(--font-size-lg);
+  color: var(--color-fg);
+  text-align: center;
+}

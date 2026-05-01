@@ -6,11 +6,11 @@ import { Lobby } from "../components/Lobby";
 import { Board } from "../components/Board";
 import { StatusBar } from "../components/StatusBar";
 import { ErrorBanner } from "../components/ErrorBanner";
-import { useMockGame } from "../hooks/useMockGame";
+import { useGameSocket } from "../hooks/useGameSocket";
 import styles from "./page.module.css";
 
 function Game({ roomId, onBackToLobby }: { roomId: string; onBackToLobby: () => void }) {
-  const { state, mark, sendMove, sendRematch, error, opponentLeft } = useMockGame(roomId);
+  const { state, mark, sendMove, sendRematch, error, opponentLeft } = useGameSocket(roomId);
 
   if (error && (error.code === "ROOM_FULL" || error.code === "ROOM_NOT_FOUND")) {
     return (
@@ -32,6 +32,11 @@ function Game({ roomId, onBackToLobby }: { roomId: string; onBackToLobby: () => 
       {opponentLeft && <ErrorBanner message="Your opponent has left the game" />}
       {error && <ErrorBanner message={error.message} />}
       <StatusBar state={state} mark={mark} />
+      {state.status === "waiting" && (
+        <p className={styles["page__room-code"]}>
+          Room code: <strong>{roomId}</strong>
+        </p>
+      )}
       <Board state={state} mark={mark} onMove={sendMove} />
       {isGameOver && !opponentLeft && (
         <button type="button" className={styles.page__button} onClick={sendRematch}>
@@ -51,17 +56,19 @@ export default function Home() {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [lobbyError, setLobbyError] = useState<string | null>(null);
 
+  const handleCreateRoom = () => {
+    const code = Math.random().toString(36).substring(2, 6).toUpperCase();
+    setLobbyError(null);
+    setRoomId(code);
+  };
+
   const handleJoinRoom = (code: string) => {
     if (!code.trim()) {
       setLobbyError("Please enter a room code");
       return;
     }
-    if (code.trim() !== "mock-room") {
-      setLobbyError("Invalid room code");
-      return;
-    }
     setLobbyError(null);
-    setRoomId(code.trim());
+    setRoomId(code.trim().toUpperCase());
   };
 
   return (
@@ -71,7 +78,7 @@ export default function Home() {
         <Game roomId={roomId} onBackToLobby={() => setRoomId(null)} />
       ) : (
         <Lobby
-          onCreateRoom={() => setRoomId("mock-room")}
+          onCreateRoom={handleCreateRoom}
           onJoinRoom={handleJoinRoom}
           error={lobbyError ?? undefined}
         />
