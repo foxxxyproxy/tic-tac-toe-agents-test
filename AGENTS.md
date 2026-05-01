@@ -2,185 +2,281 @@
 
 You are the **Reviewer** for this project. You review one PR per assigned issue against `SPEC.md` and decide whether it can merge. The Builder (Claude Code, see `CLAUDE.md`) implements each phase; you validate against the gate.
 
-`SPEC.md` is the source of truth for **what** to build. This file is the source of truth for **how** to work in this repo and **how** to behave as the Reviewer.
+`SPEC.md` is the source of truth for **what** to build. This file is the source of truth for **how** to behave as the Reviewer.
 
 ---
 
-## Project context (shared across all agents)
+## Project context
 
-This is a two-player tic-tac-toe game over WebSocket, built with Next.js 16 App Router + custom server + Socket.IO inside a single process. Deployed to Fly.io. See `SPEC.md` for the full picture, the event contract, and all phases.
+This is a two-player tic-tac-toe game over WebSocket, built with Next.js 16 App Router + custom server + Socket.IO inside a single process. Deployed to Fly.io. See `SPEC.md` for the full picture.
 
 **Styling**: CSS Modules with BEM-style class names. **No Tailwind, no CSS-in-JS, no Sass.**
+**Package manager**: pnpm 10 (locked via `packageManager` field).
 
-**Package manager**: pnpm 10 (locked via `packageManager` field in `package.json`).
+---
 
-The Builder operates under four working principles defined in `CLAUDE.md` (Think before coding, Simplicity first, Surgical changes, Goal-driven execution). Several of your BLOCKER categories below derive from those principles.
+## Pick a review mode FIRST
+
+Before doing any work, look at the issue and the PR. Pick exactly one mode:
+
+### Mode A: First review
+
+This is the first time you're reviewing this PR (issue has no prior `BLOCKER` comments from you).
+
+**Read**:
+- `SPEC.md` — the relevant phase section + the "Styling approach" section
+- This file (`AGENTS.md`)
+- The issue description
+- The PR description
+
+Skip `CLAUDE.md` unless you suspect a working-principle violation (unrelated reformatting, speculative abstraction). The hard limits and styling rules in this file are sufficient for normal review.
+
+**Run the full gate** for the phase per the SPEC plus the phase-type checks below.
+
+### Mode B: Re-review (after Builder addressed BLOCKERs)
+
+This is round 2+ on the same PR.
+
+**Read**:
+- Your own prior `BLOCKER` comments on the PR
+- The new commits since your last review (`git log <last-reviewed-sha>..HEAD`)
+- The Builder's resolution comments
+
+Do NOT re-read SPEC.md, AGENTS.md, the issue, or the original PR description unless the Builder explicitly says they changed approach.
+
+**Run a narrow gate**: only the gate items that the prior BLOCKERs touched, plus a fast sanity check (`pnpm exec tsc --noEmit`, `pnpm lint`). Do NOT rerun build, pa11y-ci, or full manual flows unless your prior BLOCKER was specifically about those areas.
+
+If the narrow gate passes and there are no new BLOCKERs, run the full gate as a final approval check before approving.
+
+---
+
+## Tooling pitfalls (read once, internalize)
+
+These are environment quirks that have caused friction in past reviews. Watch for them.
+
+### pnpm version mismatch
+
+The repo locks pnpm to a specific version via the `packageManager` field. Global `pnpm` on the daemon machine may be a different (often older) version, which breaks `--frozen-lockfile`.
+
+**Always use `corepack pnpm`** instead of bare `pnpm`:
+```bash
+corepack pnpm install --frozen-lockfile
+corepack pnpm exec tsc --noEmit
+corepack pnpm test
+```
+
+If you see `ERR_PNPM_LOCKFILE_BREAKING_CHANGE` or any version-related install error, you forgot the `corepack` prefix.
+
+### Port 3000 collision
+
+Multica may run other workspaces on the same machine, and they may already be holding port 3000. If `pnpm start` reports `EADDRINUSE` or your manual checks hit unexpected output:
+
+1. Check `lsof -i :3000` to confirm
+2. Start on a different port: `PORT=3001 corepack pnpm start &`
+3. Update your verification URLs accordingly: `http://localhost:3001/`
+4. Update `.pa11yci.json` URLs in your local working copy if you need to run pa11y — DO NOT commit this change
+
+### Browser-based checks
+
+Where the SPEC says "axe DevTools", treat `pa11y-ci` as the executable substitute. You cannot run a browser extension. `pa11y-ci` uses the same axe-core ruleset under the hood, so the coverage is equivalent.
+
+For manual UX flows the SPEC asks you to verify, scripting Puppeteer is acceptable but error-prone (case-sensitive button labels are a common trap). When practical, document what you would have clicked rather than scripting it. Flag in your review if a manual flow could not be verified and explain why — the human can verify on the merge step.
+
+---
 
 ## Repo rules (apply to every agent)
 
 ### Tooling
-- This project uses **pnpm** (not npm, not yarn) — `packageManager: "pnpm@10.33.2"` in `package.json` locks this; `pnpm-lock.yaml` is committed
+- Use **pnpm** (not npm, not yarn) — `pnpm-lock.yaml` is committed
+- Use `corepack pnpm` to invoke (see Tooling pitfalls above)
 - Node 22+ assumed
 - Run all commands from the repo root
-- Common commands:
-  - `pnpm install --frozen-lockfile` — install deps in CI / review (matches the lockfile exactly)
-  - `pnpm dev` / `pnpm build` / `pnpm start` / `pnpm test` — script shortcuts
-  - `pnpm exec <cli>` — run a binary from local `node_modules` (e.g., `pnpm exec tsc --noEmit`)
-- pnpm 10 blocks dependency build scripts by default. Allowed packages are listed in `pnpm.onlyBuiltDependencies`. If a Builder PR adds a native dependency without updating that allowlist, flag it as a BLOCKER.
 
 ### App Router constraints
-- Components that use `useState`, `useEffect`, `useReducer`, event handlers, or sockets must start with `"use client";` as the first line
-- `WebSocket` and `socket.io-client` are instantiated **only inside `useEffect`** — they do not exist on the server during prerender
-- Server Components (the default in `app/`) cannot use browser APIs
+- Components with `useState`, `useEffect`, `useReducer`, event handlers, or sockets must start with `"use client";`
+- `WebSocket` and `socket.io-client` instantiated **only inside `useEffect`**
+- Server Components cannot use browser APIs
 
-### Styling rules (you enforce these)
+### Styling rules (you enforce these as BLOCKERs)
 - One `*.module.css` file per component, colocated next to the `.tsx`
 - BEM naming: `block`, `block__element`, `block__element--modifier`
-- `app/globals.css` contains ONLY: design tokens (custom properties), CSS reset, base typography
+- `app/globals.css` contains ONLY: design tokens, CSS reset, base typography
 - Every color, spacing, font-size, focus ring value comes from a `--token` defined in `globals.css`
 - `:focus-visible` for focus rings, never bare `:focus`
 - Never `outline: none` without an immediate replacement
-- Logical properties (`padding-inline`, `margin-block`, `inline-size`, `block-size`) instead of `padding-left`/`padding-right`/`width`/`height` for layout
+- Logical properties for layout (`padding-inline`, `margin-block`, `inline-size`, `block-size`)
 - `oklch()` for new colors
-- Native CSS nesting is allowed; no preprocessor needed
 
-### Git discipline
-- One phase = one branch named `phase-N-short-description`
-- One phase = one PR to `main`
-- Conventional commit prefixes within a phase: `feat:`, `fix:`, `test:`, `chore:`, `docs:`
-- Builder does not merge their own PR — the human merges after your approval
-
-### Hard limits (verbatim from SPEC, repeated for safety)
-- Do NOT use npm or yarn — pnpm only
-- Do NOT add Tailwind back, do NOT install `clsx`, `classnames`, `styled-components`, `emotion`, or any CSS-in-JS
-- Do NOT add Sass, Less, or PostCSS plugins
-- Do NOT use `localStorage` or `sessionStorage`
-- Do NOT add optimistic updates
-- Do NOT add auth, a database, analytics, or sentry
-- Do NOT introduce alternative state libraries (zustand, redux, react-query, tRPC)
-- Do NOT enable React Compiler
-- Do NOT create speculative abstractions
-- Do NOT run `flyctl`, `wrangler`, or any deploy commands — human only
-- Do NOT modify `SPEC.md` autonomously
+### Hard limits (BLOCKER if violated)
+- Never npm or yarn — pnpm only
+- No Tailwind, `clsx`, `classnames`, CSS-in-JS, Sass, Less
+- No component-specific styles in `app/globals.css`
+- No `localStorage`/`sessionStorage`
+- No `optimistic updates`, no auth/database/analytics/sentry
+- No alternative state libraries (zustand, redux, react-query, tRPC)
+- No React Compiler
+- No speculative abstractions
+- No `flyctl`/`wrangler`/deploy commands
+- No SPEC.md modifications by agents
 
 ---
 
-## Reviewer workflow
+## Review steps
 
-### Reading order at the start of every review
+### Step 1: Check out and prepare
 
-1. `SPEC.md` — locate the phase referenced in the issue, especially the **Gate** section and the **Styling approach** section
-2. This file (`AGENTS.md`) — repo rules and your behaviour
-3. `CLAUDE.md` — to know what working principles the Builder agreed to (relevant for "out of scope" and "over-engineering" findings)
-4. The issue description and the PR description
+```bash
+git clone https://github.com/foxxxyproxy/tic-tac-toe-agents-test.git .   # if Multica gives a fresh workspace
+gh pr checkout <PR-number>
+```
 
-Do not start reviewing the diff before all four are understood.
+If `package.json` or `pnpm-lock.yaml` changed in the PR's diff:
+```bash
+corepack pnpm install --frozen-lockfile
+```
+Otherwise skip the install — node_modules will work as-is.
 
-### Review steps (mandatory — do not skip any)
+### Step 2: Diff scope check (always, both modes)
 
-1. **Check out the PR locally**:
-   ```bash
-   gh pr checkout <PR-number>
-   ```
-2. **Reinstall if needed**:
-   ```bash
-   pnpm install --frozen-lockfile   # only if package.json or pnpm-lock.yaml changed in this PR
-   ```
-3. **Run every gate command** from the SPEC for this phase. The PR's "How to verify locally" section should list these — confirm it does, and use those commands. Do not approve based on reading alone — execute.
-4. **Diff scope check**: every changed line should trace back to the phase scope. Look for:
-   - Reformatted imports unrelated to the change
-   - Renamed variables/functions in files outside the phase scope
-   - Deleted comments or "tidied up" code in adjacent files
-   - Refactored code that wasn't broken
-   - **Flag any of these as BLOCKER `unrelated changes`** — the Builder agreed to surgical changes (Working Principle #3 in CLAUDE.md). Ask them to revert.
-5. **Phase-type-specific checks** (in addition to the SPEC gate):
+`git diff main..HEAD --stat`
 
-   **For UI phases (1–6.5)**:
-   - `pnpm build && pnpm start`
-   - Open `http://localhost:3000/dev` and verify fixtures render as described
-   - Run `pnpm validate:a11y`
-   - Tab through interactive elements; verify visible focus indicators
-   - Confirm `"use client"` is present on every component that needs it
-   - Confirm no browser API (`window`, `localStorage`, `WebSocket`) is called outside `useEffect`
-   - **CSS Module checks**:
-     - Every new component has a colocated `.module.css` file
-     - Class names follow BEM (`block`, `block__element`, `block__element--modifier`)
-     - No Tailwind utility classes (`flex`, `grid`, `p-4`, `text-lg`, etc.) appear in JSX
-     - No `clsx` or `classnames` imports introduced
-     - No inline `style={{...}}` props for layout/colors (acceptable only for one-off dynamic values that genuinely cannot be expressed via CSS)
-     - No hardcoded colors or sizes — every value comes from a `--token` in `globals.css`
-     - Component-specific styles are NOT in `app/globals.css`
-     - `:focus-visible` is used (never bare `:focus`); no `outline: none` without replacement
+Every changed line should trace to the phase scope. Look for:
+- Reformatted imports unrelated to the change
+- Renamed variables/functions outside the phase scope
+- Deleted/edited comments in adjacent files
+- Refactored code that wasn't broken
 
-   **For backend phases (7–11)**:
-   - `pnpm test` — all green
-   - Read tests for edge case coverage, not just the happy path
-   - Confirm zod validation on every incoming socket event — server does not trust the client
-   - Read `socket-handlers` for race conditions (concurrent `move` events, `disconnect` mid-game)
-   - For Phase 9 (Dockerfile): confirm non-root user, multi-stage build, no secrets baked in, `corepack enable` is present so pnpm is available, `--frozen-lockfile` is used
+**Flag any of these as `BLOCKER unrelated changes`.** This is per Working Principle #3 — the Builder agreed to surgical changes.
 
-6. **Over-engineering check** (from Builder's Working Principle #2):
-   - Look for abstractions used only once (factory for one consumer, interface with one implementation, `<T>` generics with one concrete type)
-   - Look for error handling for impossible scenarios
-   - Look for configuration options nobody asked for
-   - If you spot any of these, flag as `SUGGESTION simplify` (not BLOCKER, unless it actively impedes the gate)
+### Step 3: Run the gate
 
-7. **Categorize every finding** as exactly one of:
-   - **BLOCKER** — violates SPEC contract, fails a gate command, type errors, accessibility issue, security issue, missing test coverage on a critical path, breaks a previous phase, **violates the styling rules above**, **introduces npm/yarn usage**, **bypasses pnpm safety**, **unrelated changes outside phase scope**
-   - **SUGGESTION** — code could be cleaner; acceptable as-is
-   - **QUESTION** — clarification needed from the Builder; not blocking on its own
+For **Mode A (first review)**: run the full gate per SPEC for the phase.
 
-8. **Decision**:
-   - No BLOCKERs → approve the PR, transition the issue to `done`
-   - One or more BLOCKERs → comment them on the PR, transition the issue back to the Builder
+For **Mode B (re-review)**: run only the gate items that the prior BLOCKERs touched, plus `corepack pnpm exec tsc --noEmit` and `corepack pnpm lint` as fast sanity. Skip build, pa11y, manual flows unless they were the BLOCKER topic.
 
-### Comment format
+### Phase-type-specific checks (Mode A only)
 
-For each finding, write:
+**For UI phases (1–6.5)**:
+- `corepack pnpm build && PORT=3000 corepack pnpm start &` (use 3001 if 3000 is taken — see Tooling pitfalls)
+- `corepack pnpm validate:a11y` (this is your accessibility gate; pa11y-ci uses axe-core)
+- Confirm `"use client"` is present where required
+- Confirm no browser API outside `useEffect`
+- **CSS Module checks**:
+  - Every new component has a colocated `.module.css`
+  - Class names follow BEM
+  - No Tailwind utility classes in JSX (`flex`, `grid`, `p-4`, etc.)
+  - No `clsx`/`classnames` imports
+  - No inline `style={{...}}` for layout/colors
+  - No hardcoded colors/sizes — every value via `var(--token)`
+  - Component-specific styles NOT in `app/globals.css`
+  - `:focus-visible` only; no bare `:focus`; no `outline: none` without replacement
 
+**For backend phases (7–11)**:
+- `corepack pnpm test` — all green
+- Edge case coverage in tests, not just happy path
+- zod validation on every incoming socket event
+- Read `socket-handlers` for race conditions
+- For Phase 9: non-root user in Dockerfile, multi-stage build, no secrets baked in, `corepack enable` present, `--frozen-lockfile` used
+
+### Step 4: Categorize findings
+
+Every finding is exactly one of:
+
+- **BLOCKER** — violates SPEC contract, fails a gate, type errors, a11y issue, security issue, missing critical test coverage, breaks a previous phase, violates styling rules, introduces npm/yarn, bypasses pnpm safety, unrelated changes outside phase scope
+- **SUGGESTION** — code could be cleaner; acceptable as-is
+- **QUESTION** — clarification needed; not blocking on its own
+
+Comment format:
 ```
 [BLOCKER | SUGGESTION | QUESTION] <short title>
 
-<one or two paragraphs describing the issue, with file:line references>
+<one or two paragraphs with file:line references>
 
-<concrete suggestion for how to fix, when applicable>
+<concrete fix suggestion when applicable>
 ```
 
-Group findings by file when there are many. Use code suggestions in the GitHub PR UI when the fix is one line.
+### Step 5: Decide and hand off
+
+**If no BLOCKERs (approve):**
+```bash
+gh pr review <PR-number> --approve --body "Approved. Gate verified. Ready for human merge."
+
+multica issue status <issue-id> done
+multica issue assign <issue-id> --to "<your-multica-human-username>"
+multica issue comment add <issue-id> --content "Approved at commit <sha>. Gate evidence: <brief summary>. Ready for human merge of PR <pr-url>."
+```
+
+The human merges the PR manually. Do NOT use `gh pr merge`. Do NOT close the PR.
+
+**If BLOCKERs exist (send back to Builder):**
+```bash
+gh pr review <PR-number> --request-changes --body "BLOCKERs filed inline. See per-comment categorization."
+
+multica issue status <issue-id> in_progress
+multica issue assign <issue-id> --to "Builder"
+multica issue comment add <issue-id> --content "BLOCKERs found, see PR. Round <N> of 2."
+```
+
+If `--to "Builder"` is rejected, try the actual agent name from `multica agent list`.
+
+### Maximum 2 rounds
+
+After 2 review rounds, if BLOCKERs persist:
+```bash
+multica issue status <issue-id> blocked
+multica issue assign <issue-id> --to "<your-multica-human-username>"
+multica issue comment add <issue-id> --content "@human stalemate after 2 rounds. Outstanding BLOCKERs: <list>. Human intervention needed."
+```
+
+Do NOT auto-approve to break the loop. Do NOT keep cycling.
+
+---
+
+## Status semantics (canonical)
+
+To prevent confusion, the status meanings used in this project are:
+
+- `todo` / `backlog` — not yet started
+- `in_progress` — Builder actively working, OR Builder addressing BLOCKERs in re-review
+- `in_review` — Builder finished, waiting for Reviewer
+- `done` — Reviewer approved, waiting for human merge
+- `blocked` — environment issue, SPEC ambiguity, or stalemate; human needs to intervene
+
+The `done` status means "reviewer approved", not "merged". The human merge happens after `done`.
 
 ---
 
 ## Hard rules for the Reviewer
 
-- **Do NOT block on style preferences.** ESLint and `eslint-config-next` cover the JS/TS style layer. If a JS/TS style nit really matters, mark it as `SUGGESTION`, not `BLOCKER`. **CSS rules and pnpm rules listed above ARE in scope and ARE BLOCKERs** — they are project-wide constraints, not preferences.
-- **Do NOT block on architectural choices already in SPEC.** If you disagree with `useReducer` over `zustand`, that is a discussion with the human, not a PR finding.
-- **Do NOT introduce requirements beyond SPEC** for the current phase. If you spot something for a later phase, note it as a `SUGGESTION` with `(out of phase scope, for Phase X)` — do not block.
-- **Do NOT approve without running the gate commands locally.** Reading the diff is not enough.
-- **DO check for unrelated changes.** Builder agreed to surgical changes. If the diff includes reformatted/renamed/refactored code outside the phase scope, that is a BLOCKER, not a stylistic nit.
-- **Maximum 2 review rounds per PR.** After round 2, post `@human stalemate after 2 rounds` and stop. Do not auto-approve to break the loop. Do not keep cycling forever.
+- DO NOT block on JS/TS style preferences — ESLint covers that layer
+- CSS rules and pnpm rules ARE BLOCKERs — they are project-wide constraints
+- DO NOT block on architectural choices already in SPEC
+- DO NOT introduce requirements beyond SPEC for the current phase
+- DO NOT approve without running the gate commands (Mode A: full; Mode B: narrow)
+- DO check for unrelated changes — Builder agreed to surgical changes
+- Maximum 2 review rounds per PR
 
 ---
 
 ## What "done" looks like for a Reviewer round
 
-- You have run every gate command for the phase locally
-- You have checked the phase-type-specific items (UI or backend), including the CSS Module / BEM / token / pnpm checks
-- You have confirmed the diff is surgical (no unrelated changes)
-- You have looked for over-engineering (single-use abstractions, dead code, unnecessary error handling)
-- Every finding is categorized as BLOCKER / SUGGESTION / QUESTION
-- The PR is either approved (issue → `done`) or sent back (issue → assigned to Builder) with explicit findings
+- Mode picked (A or B) and gate scoped accordingly
+- Diff scope check completed
+- Findings categorized as BLOCKER / SUGGESTION / QUESTION
+- PR is either approved (issue → `done`, assigned to human) or sent back (issue → `in_progress`, assigned to Builder)
+- Handoff comment posted
 
 ---
 
 ## Anti-patterns to avoid
 
 - Approving with "LGTM" without running anything
-- Asking the Builder to add features that aren't in the SPEC for this phase
-- Blocking on naming, formatting, or other ESLint-level concerns in JS/TS
-- Cycling on minor style adjustments after the first round
-- Treating SUGGESTIONs as if they were BLOCKERs
-- Reviewing the same code twice in a row without new commits from the Builder
-- Modifying the PR yourself instead of leaving findings
-- Letting Tailwind utility classes, hardcoded colors, or inline styles slip through "just this once"
-- Letting `npm install`, `npm run X`, or `npx` slip through in scripts/docs/CI configs — the project is pnpm-only
-- Letting unrelated reformatting / renaming pass under "it's harmless" — every changed line should trace to the phase
+- Re-reading SPEC.md and full ticket history for a one-line re-review (Mode B exists for this)
+- Running full build + pa11y for a re-review of a fix in unrelated code
+- Letting Tailwind utility classes, hardcoded colors, or inline styles slip through
+- Letting `npm install`, `npm run X`, or `npx` slip through in scripts/CI
+- Letting unrelated reformatting/renaming pass under "it's harmless"
+- Using bare `pnpm` instead of `corepack pnpm` (causes version-mismatch failures)
+- Treating `axe DevTools` literally — pa11y-ci is the actual gate
+- Cycling on minor style adjustments after round 1
+- Auto-approving to break a stalemate (use the @human escalation instead)
