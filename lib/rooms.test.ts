@@ -124,7 +124,12 @@ describe("removePlayer", () => {
   it("removes player from room", () => {
     joinRoom("room1", "player1");
     joinRoom("room1", "player2");
-    removePlayer("room1", "player1");
+    const result = removePlayer("room1", "player1");
+    expect(isError(result)).toBe(false);
+    if (!isError(result)) {
+      expect(result.removed).toBe(true);
+      expect(result.roomEmpty).toBe(false);
+    }
     const room = getRoom("room1");
     expect(room).toBeDefined();
     expect(room!.players).toHaveLength(1);
@@ -133,11 +138,20 @@ describe("removePlayer", () => {
 
   it("deletes room when last player leaves", () => {
     joinRoom("room1", "player1");
-    removePlayer("room1", "player1");
+    const result = removePlayer("room1", "player1");
+    expect(isError(result)).toBe(false);
+    if (!isError(result)) {
+      expect(result.removed).toBe(true);
+      expect(result.roomEmpty).toBe(true);
+    }
     expect(getRoom("room1")).toBeUndefined();
   });
 
-  it("is a no-op for unknown room", () => {
-    expect(() => removePlayer("nonexistent", "player1")).not.toThrow();
+  it("returns ROOM_NOT_FOUND for unknown room", () => {
+    const result = removePlayer("nonexistent", "player1");
+    expect(isError(result)).toBe(true);
+    if (isError(result)) {
+      expect(result.error).toBe("ROOM_NOT_FOUND");
+    }
   });
 });

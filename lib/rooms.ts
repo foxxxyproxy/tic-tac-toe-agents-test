@@ -108,15 +108,20 @@ export function handleRematch(
 export function removePlayer(
   roomId: string,
   playerId: string,
-): void {
+): RoomResult<{ removed: boolean; roomEmpty: boolean }> {
   const room = rooms.get(roomId);
-  if (!room) return;
+  if (!room) {
+    return { error: "ROOM_NOT_FOUND", message: "Room not found" };
+  }
 
   room.players = room.players.filter((p) => p.id !== playerId);
 
   if (room.players.length === 0) {
     rooms.delete(roomId);
+    return { removed: true, roomEmpty: true };
   }
+
+  return { removed: true, roomEmpty: false };
 }
 
 export function clearAllRooms(): void {
