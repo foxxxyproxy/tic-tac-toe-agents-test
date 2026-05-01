@@ -14,7 +14,7 @@
 .dev__subtitle {
   font-size: var(--font-size-lg);
   margin-block-end: var(--space-4);
-  border-block-end: 1px solid var(--color-border);
+  border-block-end: var(--border-width) solid var(--color-border);
   padding-block-end: var(--space-2);
 }
 

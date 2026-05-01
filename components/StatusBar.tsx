@@ -18,11 +18,11 @@ function getMessage(state: GameState, mark: Mark | null): { text: string; modifi
         : { text: "Opponent's turn", modifier: "" };
     case "won_X":
       return mark === "X"
-        ? { text: "You win!", modifier: "win" }
+        ? { text: "You win", modifier: "win" }
         : { text: "X wins", modifier: "" };
     case "won_O":
       return mark === "O"
-        ? { text: "You win!", modifier: "win" }
+        ? { text: "You win", modifier: "win" }
         : { text: "O wins", modifier: "" };
     case "draw":
       return { text: "Draw", modifier: "draw" };
