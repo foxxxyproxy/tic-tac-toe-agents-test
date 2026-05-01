@@ -9,7 +9,7 @@
 
 .dev__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(calc(var(--board-max-size) + var(--space-8)), 1fr));
   gap: var(--space-8);
 }
 

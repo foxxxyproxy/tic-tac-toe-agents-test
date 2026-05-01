@@ -2,7 +2,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-1);
-  max-inline-size: 320px;
+  max-inline-size: var(--board-max-size);
   background: var(--color-border);
   padding: var(--space-1);
 }
