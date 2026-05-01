@@ -1,0 +1,20 @@
+.status-bar {
+  padding: var(--space-2) var(--space-4);
+}
+
+.status-bar__text {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+}
+
+.status-bar__text--my-turn {
+  color: var(--color-accent);
+}
+
+.status-bar__text--win {
+  color: var(--color-x);
+}
+
+.status-bar__text--draw {
+  color: var(--color-muted);
+}

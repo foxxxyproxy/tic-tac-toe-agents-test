@@ -7,6 +7,17 @@
   margin-block-end: var(--space-6);
 }
 
+.dev__section {
+  margin-block-end: var(--space-8);
+}
+
+.dev__subtitle {
+  font-size: var(--font-size-lg);
+  margin-block-end: var(--space-4);
+  border-block-end: 1px solid var(--color-border);
+  padding-block-end: var(--space-2);
+}
+
 .dev__grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(calc(var(--board-max-size) + var(--space-8)), 1fr));
@@ -20,5 +31,6 @@
 }
 
 .dev__fixture-label {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-base);
+  color: var(--color-muted);
 }
