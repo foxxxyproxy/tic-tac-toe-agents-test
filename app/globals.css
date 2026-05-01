@@ -30,6 +30,10 @@
   --focus-ring-offset: 2px;
   --focus-ring-color: var(--color-accent);
 
+  /* Borders */
+  --border-width: 1px;
+  --radius-sm: 0.25rem;
+
   /* Layout */
   --cell-size-min: 56px;
   --board-max-size: 320px;
