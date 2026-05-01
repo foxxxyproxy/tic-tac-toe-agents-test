@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest",
-    "validate:html": "html-validate '.next/server/app/**/*.html' || true",
+    "validate:html": "html-validate '.next/server/app/**/*.html'",
     "validate:a11y": "pa11y-ci",
     "prepare": "husky"
   },
