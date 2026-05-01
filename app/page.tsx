@@ -56,8 +56,12 @@ export default function Home() {
       setLobbyError("Please enter a room code");
       return;
     }
+    if (code.trim() !== "mock-room") {
+      setLobbyError("Invalid room code");
+      return;
+    }
     setLobbyError(null);
-    setRoomId(code);
+    setRoomId(code.trim());
   };
 
   return (
