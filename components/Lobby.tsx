@@ -1,18 +1,20 @@
-// SPEC.md: Phase 4 — Lobby component (static)
+// SPEC.md: Phase 4 — Lobby component (interactive from Phase 5)
+"use client";
 
 import styles from "./Lobby.module.css";
 
 type LobbyProps = {
   roomCode?: string;
+  onCreateRoom?: () => void;
 };
 
-export function Lobby({ roomCode }: LobbyProps) {
+export function Lobby({ roomCode, onCreateRoom }: LobbyProps) {
   return (
     <div className={styles.lobby}>
       <h2 className={styles.lobby__title}>Tic-Tac-Toe</h2>
 
       <div className={styles.lobby__form}>
-        <button type="button" className={[styles.lobby__button, styles["lobby__button--primary"]].join(" ")}>
+        <button type="button" className={[styles.lobby__button, styles["lobby__button--primary"]].join(" ")} onClick={onCreateRoom}>
           Create room
         </button>
       </div>
