@@ -32,6 +32,11 @@ function Game({ roomId, onBackToLobby }: { roomId: string; onBackToLobby: () => 
       {opponentLeft && <ErrorBanner message="Your opponent has left the game" />}
       {error && <ErrorBanner message={error.message} />}
       <StatusBar state={state} mark={mark} />
+      {state.status === "waiting" && (
+        <p className={styles["page__room-code"]}>
+          Room code: <strong>{roomId}</strong>
+        </p>
+      )}
       <Board state={state} mark={mark} onMove={sendMove} />
       {isGameOver && !opponentLeft && (
         <button type="button" className={styles.page__button} onClick={sendRematch}>
