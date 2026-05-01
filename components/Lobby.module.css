@@ -51,6 +51,12 @@
   border-color: var(--color-accent);
 }
 
+.lobby__error {
+  color: var(--color-error);
+  font-size: var(--font-size-base);
+  margin: 0;
+}
+
 .lobby__room-code {
   display: flex;
   align-items: center;

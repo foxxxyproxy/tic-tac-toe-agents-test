@@ -1,0 +1,25 @@
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: color-mix(in oklch, var(--color-error) 15%, var(--color-bg));
+  border: var(--border-width) solid var(--color-error);
+  border-radius: var(--radius-sm);
+  color: var(--color-fg);
+  max-inline-size: var(--board-max-size);
+}
+
+.error-banner__icon {
+  flex-shrink: 0;
+  font-size: var(--font-size-lg);
+}
+
+.error-banner__message {
+  font-size: var(--font-size-base);
+}
+
+.error-banner--severe {
+  background: color-mix(in oklch, var(--color-error) 25%, var(--color-bg));
+  font-weight: 600;
+}

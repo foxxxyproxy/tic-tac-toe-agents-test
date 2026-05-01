@@ -92,6 +92,7 @@ export function useMockGame(roomId: string): {
   playerId: string | null;
   error: { code: ErrorCode; message: string } | null;
   connected: boolean;
+  opponentLeft: boolean;
   sendMove: (index: number) => void;
   sendRematch: () => void;
 } {
@@ -138,6 +139,7 @@ export function useMockGame(roomId: string): {
     playerId: "mock-player",
     error: null,
     connected: true,
+    opponentLeft: false,
     sendMove,
     sendRematch,
   };
