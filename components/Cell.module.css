@@ -1,0 +1,39 @@
+.cell {
+  aspect-ratio: 1;
+  min-inline-size: var(--cell-size-min);
+  min-block-size: var(--cell-size-min);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-cell);
+  font-weight: 700;
+  background: var(--color-bg);
+  border: none;
+  cursor: pointer;
+  color: var(--color-fg);
+
+  &:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: calc(-1 * var(--focus-ring-offset));
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+
+.cell--x {
+  color: var(--color-x);
+}
+
+.cell--o {
+  color: var(--color-o);
+}
+
+.cell--winning {
+  background: var(--color-winning-bg);
+}
+
+.cell--empty {
+  color: transparent;
+}

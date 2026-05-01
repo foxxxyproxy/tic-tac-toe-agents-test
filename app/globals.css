@@ -32,6 +32,7 @@
 
   /* Layout */
   --cell-size-min: 56px;
+  --board-max-size: 320px;
 }
 
 @media (prefers-color-scheme: dark) {

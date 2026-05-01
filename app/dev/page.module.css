@@ -1,0 +1,24 @@
+.dev {
+  padding: var(--space-6);
+}
+
+.dev__title {
+  font-size: var(--font-size-xl);
+  margin-block-end: var(--space-6);
+}
+
+.dev__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(calc(var(--board-max-size) + var(--space-8)), 1fr));
+  gap: var(--space-8);
+}
+
+.dev__fixture {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.dev__fixture-label {
+  font-size: var(--font-size-lg);
+}
