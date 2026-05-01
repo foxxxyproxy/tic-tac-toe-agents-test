@@ -37,3 +37,8 @@
 .cell--empty {
   color: transparent;
 }
+
+.cell--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
