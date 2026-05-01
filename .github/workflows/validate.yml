@@ -1,0 +1,61 @@
+name: HTML & Accessibility Validation
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: HTML validation
+        run: pnpm validate:html
+
+      - name: Run a11y checks
+        run: |
+          # Patch pa11y config to use system Chrome with --no-sandbox
+          cat > .pa11yci.json <<'EOF'
+          {
+            "defaults": {
+              "standard": "WCAG2AA",
+              "timeout": 15000,
+              "wait": 500,
+              "chromeLaunchConfig": {
+                "executablePath": "/usr/bin/google-chrome-stable",
+                "args": ["--no-sandbox"]
+              }
+            },
+            "urls": [
+              "http://localhost:3000/",
+              "http://localhost:3000/dev",
+              "http://localhost:3000/dev/error-states"
+            ]
+          }
+          EOF
+
+          pnpm start &
+          SERVER_PID=$!
+
+          for i in $(seq 1 15); do
+            curl -s http://localhost:3000/ > /dev/null && break
+            sleep 1
+          done
+
+          pnpm validate:a11y
+          EXIT_CODE=$?
+
+          kill $SERVER_PID
+          exit $EXIT_CODE

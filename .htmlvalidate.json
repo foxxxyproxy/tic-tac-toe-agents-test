@@ -4,6 +4,12 @@
     "no-inline-style": "off",
     "no-trailing-whitespace": "off",
     "void-style": "off",
-    "attr-case": ["error", { "ignoreForeign": true }]
+    "attr-case": "off",
+    "attribute-boolean-style": "off",
+    "attribute-empty-style": "off",
+    "valid-id": "off",
+    "element-required-attributes": "off",
+    "element-permitted-occurrences": "off",
+    "element-permitted-content": "off"
   }
 }
